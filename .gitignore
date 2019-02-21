@@ -6,3 +6,6 @@ output-virtualbox-iso/
 
 # For built boxes
 *.box
+
+# Ansible retry
+*.retry

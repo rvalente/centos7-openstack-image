@@ -1,0 +1,49 @@
+---
+- hosts: all
+  become: yes
+  
+  tasks:
+    - name: enable automatic logout after 5 minutes
+      blockinfile:
+        path: /etc/profile
+        block: |
+          TMOUT=300
+          readonly TMOUT
+          export TMOUT
+          readonly HISTFILE
+
+    - name: disable interactive startup
+      blockinfile:
+        path: /etc/sysconfig/init
+        block: |
+          # Disable Interactive Startup
+          PROMPT=no
+          # Force sulogin for single user mode
+          SINGLE=/sbin/sulogin
+
+    - name: restrict root login to console only
+      lineinfile:
+        path: /etc/securetty
+        line: tty1
+
+    - name: ensure /root home has correct permissions
+      file:
+        path: /root
+        mode: 0700
+
+    - name: Ensure auditd is configured to keep_logs
+      lineinfile:
+        path: /etc/audit/auditd.conf
+        regexp: '^max_log_file_action'
+        line: 'max_log_file_action = keep_logs'
+
+    - name: disable unused filesystems
+      copy:
+        src: dev-sec.conf
+        dest: /etc/modprobe.d/dev-sec.conf
+        mode: 0400
+                
+    - name: /etc/login.defs should not be writable
+      file:
+        path: /etc/login.defs
+        mode: 0400
