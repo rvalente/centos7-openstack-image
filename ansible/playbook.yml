@@ -1,6 +1,17 @@
 ---
 - hosts: all
   become: yes
+
+  vars:
+    disabled_filesystems:
+      - cramfs
+      - freevxfs
+      - jffs2
+      - hfs
+      - hfsplus
+      - squashfs
+      - udf
+      - vfat
   
   tasks:
     - name: enable automatic logout after 5 minutes
@@ -38,8 +49,8 @@
         line: 'max_log_file_action = keep_logs'
 
     - name: disable unused filesystems
-      copy:
-        src: dev-sec.conf
+      template:
+        src: modprobe.j2
         dest: /etc/modprobe.d/dev-sec.conf
         mode: 0400
                 
@@ -47,3 +58,43 @@
       file:
         path: /etc/login.defs
         mode: 0400
+
+    - name: ICMP ratelimit
+      sysctl:
+        name: net.ipv4.icmp_ratelimit
+        value: 100
+
+    - name: ICMP ratemask
+      sysctl:
+        name: net.ipv4.icmp_ratemask
+        value: 88089
+
+    - name: TCP timestamps
+      sysctl:
+        name: net.ipv4.tcp_timestamps
+        value: 0
+
+    - name: ARP ignore
+      sysctl:
+        name: net.ipv4.conf.all.arp_ignore
+        value: 1
+
+    - name: ARP announce
+      sysctl:
+        name: net.ipv4.conf.all.arp_announce
+        value: 2
+
+    - name: TCP RFC1337 Protect Against TCP Time-Wait
+      sysctl:
+        name: net.ipv4.tcp_rfc1337
+        value: 1
+
+    - name: Disable acceptance of all IPv4 redirected packets (1 of 2)
+      sysctl:
+        name: net.ipv4.conf.default.accept_redirects
+        value: 0
+
+    - name: Disable acceptance of all IPv4 redirected packets (2 of 2)
+      sysctl:
+        name: net.ipv4.conf.all.accept_redirects
+        value: 0
