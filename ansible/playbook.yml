@@ -57,7 +57,9 @@
     - name: /etc/login.defs should not be writable
       file:
         path: /etc/login.defs
-        mode: 0400
+        owner: root
+        group: root
+        mode: 0444
 
     - name: ICMP ratelimit
       sysctl:
