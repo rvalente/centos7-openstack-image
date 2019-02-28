@@ -3,11 +3,6 @@
   become: yes
 
   vars:
-    packages:
-      - epel-release
-      - module-init-tools
-      - haveged
-
     disabled_filesystems:
       - cramfs
       - freevxfs
@@ -48,9 +43,19 @@
       kernel.sysrq: 0
 
   tasks:
-    - name: Install Required Packages
+    - name: install module-init-tools
       package:
-        name: '{{ packages }}'
+        name: module-init-tools
+        state: present
+
+    - name: install epel-release
+      package:
+        name: epel-release
+        state: present
+
+    - name: install haveged
+      package:
+        name: haveged
         state: present
 
     - name: start haveged
