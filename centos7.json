@@ -18,7 +18,7 @@
 	},
 	{
 	    "type": "shell",
-	    "inline": ["echo '{{ user `ssh_pw` }}' | sudo -S /sbin/reboot"],
+	    "inline": ["echo '{{ user `ssh_pw` }}' | sudo -S shutdown -r now"],
 	    "expect_disconnect": true
 	},
 	{
@@ -29,12 +29,23 @@
 	},
 	{
 	    "type": "shell",
-	    "inline": ["echo '{{ user `ssh_pw` }}' | sudo -S /sbin/reboot"],
+	    "inline": ["echo '{{ user `ssh_pw` }}' | sudo -S shutdown -r now"],
 	    "expect_disconnect": true
 	},
 	{
 	    "type": "inspec",
-	    "test_path": "inspec/linux-baseline"
+	    "test_path": "inspec/linux-baseline",
+	    "extra_arguments": ["--sudo", "--sudo-password={{ user `ssh_pw` }}", "--no-distinct-exit"]
+	},
+	{
+	    "type": "inspec",
+	    "test_path": "inspec/linux-patch-baseline",
+	    "extra_arguments": ["--sudo", "--sudo-password={{ user `ssh_pw` }}", "--no-distinct-exit"]
+	},
+	{
+	    "type": "inspec",
+	    "test_path": "inspec/ssh-baseline",
+	    "extra_arguments": ["--sudo", "--sudo-password={{ user `ssh_pw` }}", "--no-distinct-exit"]
 	}
     ],
     "builders": [

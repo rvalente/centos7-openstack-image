@@ -3,6 +3,11 @@
   become: yes
 
   vars:
+    packages:
+      - epel-release
+      - module-init-tools
+      - haveged
+
     disabled_filesystems:
       - cramfs
       - freevxfs
@@ -12,8 +17,48 @@
       - squashfs
       - udf
       - vfat
-  
+
+    sysctl_cfg:
+      net.ipv4.icmp_ratelimit: 100
+      net.ipv4.icmp_ratemask: 88089
+      net.ipv4.tcp_timestamps: 0
+      net.ipv4.tcp_rfc1337: 1
+      net.ipv4.conf.all.arp_ignore: 1
+      net.ipv4.conf.all.arp_announce: 2
+      net.ipv4.conf.default.accept_redirects: 0
+      net.ipv4.conf.all.accept_redirects: 0
+      net.ipv4.conf.all.secure_redirects: 0
+      net.ipv4.conf.default.secure_redirects: 0
+      net.ipv4.conf.default.send_redirects: 0
+      net.ipv4.conf.all.send_redirects: 0
+      net.ipv4.conf.all.log_martians: 1
+      net.ipv4.conf.default.log_martians: 1
+      net.ipv6.conf.all.disable_ipv6: 1
+      net.ipv6.conf.default.accept_redirects: 0
+      net.ipv6.conf.all.accept_redirects: 0
+      net.ipv6.conf.default.router_solicitations: 0
+      net.ipv6.conf.default.accept_ra_rtr_pref: 0
+      net.ipv6.conf.default.accept_ra_pinfo: 0
+      net.ipv6.conf.default.accept_ra_defrtr: 0
+      net.ipv6.conf.all.accept_ra: 0
+      net.ipv6.conf.default.accept_ra: 0
+      net.ipv6.conf.default.autoconf: 0
+      net.ipv6.conf.default.dad_transmits: 0
+      net.ipv6.conf.default.max_addresses: 1
+      kernel.sysrq: 0
+
   tasks:
+    - name: Install Required Packages
+      package:
+        name: '{{ packages }}'
+        state: present
+
+    - name: start haveged
+      service:
+        name: haveged
+        state: started
+        enabled: yes
+
     - name: enable automatic logout after 5 minutes
       blockinfile:
         path: /etc/profile
@@ -52,8 +97,42 @@
       template:
         src: modprobe.j2
         dest: /etc/modprobe.d/dev-sec.conf
-        mode: 0400
-                
+        owner: root
+        group: root
+        mode: 0644
+
+    - name: change PASS_MAX_DAYS to 60
+      lineinfile:
+        path: /etc/login.defs
+        line: "PASS_MAX_DAYS 60"
+        regex: "^PASS_MAX_DAYS"
+
+    - name: change PASS_MIN_DAYS to 7
+      lineinfile:
+        path: /etc/login.defs
+        line: "PASS_MIN_DAYS 7"
+        regex: "^PASS_MIN_DAYS"
+
+    - name: change LOGIN_RETRIES to 5
+      lineinfile:
+        path: /etc/login.defs
+        line: "LOGIN_RETRIES 5"
+
+    - name: change LOGIN_TIMEOUT to 60
+      lineinfile:
+        path: /etc/login.defs
+        line: "LOGIN_TIMEOUT 60"
+
+    - name: update ENV_SUPATH
+      lineinfile:
+        path: /etc/login.defs
+        line: "ENV_SUPATH PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin"
+
+    - name: configure ENV_PATH
+      lineinfile:
+        path: /etc/login.defs
+        line: "ENV_PATH PATH=/usr/local/bin:/usr/bin:/bin"
+
     - name: /etc/login.defs should not be writable
       file:
         path: /etc/login.defs
@@ -61,42 +140,17 @@
         group: root
         mode: 0444
 
-    - name: ICMP ratelimit
+    - name: update sysctl settings for security
       sysctl:
-        name: net.ipv4.icmp_ratelimit
-        value: 100
+        name: '{{ item.key }}'
+        value: '{{ item.value }}'
+        sysctl_set: yes
+        state: present
+        reload: yes
+        ignoreerrors: yes
+      with_dict: '{{ sysctl_cfg }}'
 
-    - name: ICMP ratemask
-      sysctl:
-        name: net.ipv4.icmp_ratemask
-        value: 88089
-
-    - name: TCP timestamps
-      sysctl:
-        name: net.ipv4.tcp_timestamps
-        value: 0
-
-    - name: ARP ignore
-      sysctl:
-        name: net.ipv4.conf.all.arp_ignore
-        value: 1
-
-    - name: ARP announce
-      sysctl:
-        name: net.ipv4.conf.all.arp_announce
-        value: 2
-
-    - name: TCP RFC1337 Protect Against TCP Time-Wait
-      sysctl:
-        name: net.ipv4.tcp_rfc1337
-        value: 1
-
-    - name: Disable acceptance of all IPv4 redirected packets (1 of 2)
-      sysctl:
-        name: net.ipv4.conf.default.accept_redirects
-        value: 0
-
-    - name: Disable acceptance of all IPv4 redirected packets (2 of 2)
-      sysctl:
-        name: net.ipv4.conf.all.accept_redirects
-        value: 0
+    - name: remove suid on ssh-keysign
+      file:
+        path: /usr/libexec/openssh/ssh-keysign
+        mode: 'a-s'

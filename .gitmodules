@@ -1,3 +1,12 @@
 [submodule "inspec/linux-baseline"]
 	path = inspec/linux-baseline
 	url = https://github.com/dev-sec/linux-baseline.git
+[submodule "inspec/linux-patch-baseline"]
+	path = inspec/linux-patch-baseline
+	url = https://github.com/dev-sec/linux-patch-baseline.git
+[submodule "inspec/ssl-baseline"]
+	path = inspec/ssl-baseline
+	url = https://github.com/dev-sec/ssl-baseline.git
+[submodule "inspec/ssh-baseline"]
+	path = inspec/ssh-baseline
+	url = https://github.com/dev-sec/ssh-baseline.git
